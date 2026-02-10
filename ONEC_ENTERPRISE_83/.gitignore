@@ -1,0 +1,39 @@
+# 1С:Предприятие / файловые ИБ
+1Cv8.1CD
+1Cv8Log/*
+*.lgd
+*.lgr
+*.tmp
+*.bak
+*.pfl
+*.cfu
+*.cib
+*.cibx
+*.cf
+*.cfe
+*.dt
+
+# Локальные настройки/подключения
+*.v8i
+!.v8i.example
+
+# Кэш/служебные каталоги 1С
+.1cv8/
+1Cv8.1CL
+1Cv8.1CLn
+
+# EDT (Eclipse/1C:EDT) — локальные артефакты
+**/.metadata/
+**/.recommenders/
+**/.settings/org.eclipse.core.resources.prefs
+**/.settings/org.eclipse.m2e.core.prefs
+**/.settings/org.eclipse.jdt.core.prefs
+**/bin/
+**/target/
+
+# OS/IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
