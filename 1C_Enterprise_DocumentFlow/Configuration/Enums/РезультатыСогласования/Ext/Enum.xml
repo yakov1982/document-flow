@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<Enum>
+		<Properties>
+			<Name>РезультатыСогласования</Name>
+			<Synonym>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Результаты согласования</v8:content>
+				</v8:item>
+			</Synonym>
+			<Comment>Возможные результаты решения согласующего</Comment>
+		</Properties>
+		<ChildObjects>
+			<EnumValue>
+				<Properties>
+					<Name>Согласовано</Name>
+					<Synonym>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Согласовано</v8:content>
+						</v8:item>
+					</Synonym>
+				</Properties>
+			</EnumValue>
+			<EnumValue>
+				<Properties>
+					<Name>ОтклоненоСЗамечаниями</Name>
+					<Synonym>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Отклонено с замечаниями</v8:content>
+						</v8:item>
+					</Synonym>
+				</Properties>
+			</EnumValue>
+			<EnumValue>
+				<Properties>
+					<Name>НаДоработку</Name>
+					<Synonym>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>На доработку</v8:content>
+						</v8:item>
+					</Synonym>
+				</Properties>
+			</EnumValue>
+		</ChildObjects>
+	</Enum>
+</MetaDataObject>

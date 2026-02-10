@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Rights xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<setForNewObjects>false</setForNewObjects>
+	<setForAttributesByDefault>true</setForAttributesByDefault>
+	<independentRightsOfChildObjects>false</independentRightsOfChildObjects>
+	<object name="Configuration.ДокументооборотЛексима">
+		<right name="ThinClient" value="true"/>
+		<right name="WebClient" value="true"/>
+		<right name="SaveUserData" value="true"/>
+		<right name="Output" value="true"/>
+	</object>
+	<!-- Справочники: только чтение -->
+	<object name="Catalog.ВидыДокументов">
+		<right name="Read" value="true"/>
+		<right name="View" value="true"/>
+	</object>
+	<object name="Catalog.Контрагенты">
+		<right name="Read" value="true"/>
+		<right name="View" value="true"/>
+	</object>
+	<object name="Catalog.Сотрудники">
+		<right name="Read" value="true"/>
+		<right name="View" value="true"/>
+	</object>
+	<object name="Catalog.ШаблоныМаршрутов">
+		<right name="Read" value="true"/>
+		<right name="View" value="true"/>
+	</object>
+	<!-- Документы: чтение + изменение (для записи решения) -->
+	<object name="Document.ВходящийДокумент">
+		<right name="Read" value="true"/>
+		<right name="Update" value="true"/>
+		<right name="View" value="true"/>
+		<right name="Edit" value="true"/>
+	</object>
+	<object name="Document.ИсходящийДокумент">
+		<right name="Read" value="true"/>
+		<right name="Update" value="true"/>
+		<right name="View" value="true"/>
+		<right name="Edit" value="true"/>
+	</object>
+	<object name="Document.ВнутреннийДокумент">
+		<right name="Read" value="true"/>
+		<right name="Update" value="true"/>
+		<right name="View" value="true"/>
+		<right name="Edit" value="true"/>
+	</object>
+	<!-- Регистры -->
+	<object name="InformationRegister.ЖурналСогласования">
+		<right name="Read" value="true"/>
+		<right name="Update" value="true"/>
+		<right name="View" value="true"/>
+		<right name="Edit" value="true"/>
+	</object>
+	<object name="InformationRegister.ВерсииФайлов">
+		<right name="Read" value="true"/>
+		<right name="View" value="true"/>
+	</object>
+	<object name="InformationRegister.ЖурналАудита">
+		<right name="Read" value="true"/>
+		<right name="Update" value="true"/>
+		<right name="View" value="true"/>
+	</object>
+	<object name="DataProcessor.ПанельЗадач">
+		<right name="Use" value="true"/>
+		<right name="View" value="true"/>
+	</object>
+</Rights>

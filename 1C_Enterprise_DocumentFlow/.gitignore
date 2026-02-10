@@ -1,0 +1,19 @@
+# 1C:Enterprise temporary files
+*.1CD
+*.1Cv8.1C
+*.1Cv8Log
+*.log
+*.bak
+*.tmp
+DumpFiles/
+TempFiles/
+
+# IDE files
+.settings/
+.project
+.classpath
+bin/
+
+# OS files
+.DS_Store
+Thumbs.db

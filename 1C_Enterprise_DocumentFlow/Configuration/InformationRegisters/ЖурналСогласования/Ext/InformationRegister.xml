@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<InformationRegister>
+		<Properties>
+			<Name>ЖурналСогласования</Name>
+			<Synonym>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Журнал согласования</v8:content>
+				</v8:item>
+			</Synonym>
+			<Comment>История согласования документов: кто, когда, результат, комментарий</Comment>
+			<InformationRegisterPeriodicity>Second</InformationRegisterPeriodicity>
+			<WriteMode>RecordSubordinateToRecorder</WriteMode>
+			<MainFilterOnPeriod>true</MainFilterOnPeriod>
+		</Properties>
+		<ChildObjects>
+			<Dimension>
+				<Properties>
+					<Name>Документ</Name>
+					<Synonym>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Документ</v8:content>
+						</v8:item>
+					</Synonym>
+					<Type>
+						<v8:TypeDescription>
+							<v8:Type xmlns:tns="http://v8.1c.ru/8.1/data/enterprise/current-config">tns:DocumentRef.ВходящийДокумент</v8:Type>
+							<v8:Type xmlns:tns="http://v8.1c.ru/8.1/data/enterprise/current-config">tns:DocumentRef.ИсходящийДокумент</v8:Type>
+							<v8:Type xmlns:tns="http://v8.1c.ru/8.1/data/enterprise/current-config">tns:DocumentRef.ВнутреннийДокумент</v8:Type>
+						</v8:TypeDescription>
+					</Type>
+					<Master>true</Master>
+				</Properties>
+			</Dimension>
+			<Dimension>
+				<Properties>
+					<Name>НомерЭтапа</Name>
+					<Synonym>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>№ этапа</v8:content>
+						</v8:item>
+					</Synonym>
+					<Type>
+						<v8:Type>xs:decimal</v8:Type>
+						<v8:NumberQualifiers>
+							<v8:Digits>3</v8:Digits>
+							<v8:FractionDigits>0</v8:FractionDigits>
+							<v8:AllowedSign>Nonnegative</v8:AllowedSign>
+						</v8:NumberQualifiers>
+					</Type>
+				</Properties>
+			</Dimension>
+			<Resource>
+				<Properties>
+					<Name>Согласующий</Name>
+					<Synonym>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Согласующий</v8:content>
+						</v8:item>
+					</Synonym>
+					<Type>
+						<v8:Type xmlns:tns="http://v8.1c.ru/8.1/data/enterprise/current-config">tns:CatalogRef.Сотрудники</v8:Type>
+					</Type>
+				</Properties>
+			</Resource>
+			<Resource>
+				<Properties>
+					<Name>Результат</Name>
+					<Synonym>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Результат</v8:content>
+						</v8:item>
+					</Synonym>
+					<Type>
+						<v8:Type xmlns:tns="http://v8.1c.ru/8.1/data/enterprise/current-config">tns:EnumRef.РезультатыСогласования</v8:Type>
+					</Type>
+				</Properties>
+			</Resource>
+			<Resource>
+				<Properties>
+					<Name>Комментарий</Name>
+					<Synonym>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Комментарий</v8:content>
+						</v8:item>
+					</Synonym>
+					<Type>
+						<v8:Type>xs:string</v8:Type>
+						<v8:StringQualifiers>
+							<v8:Length>0</v8:Length>
+							<v8:AllowedLength>Variable</v8:AllowedLength>
+						</v8:StringQualifiers>
+					</Type>
+				</Properties>
+			</Resource>
+			<Resource>
+				<Properties>
+					<Name>ДатаРешения</Name>
+					<Synonym>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Дата решения</v8:content>
+						</v8:item>
+					</Synonym>
+					<Type>
+						<v8:Type>xs:dateTime</v8:Type>
+						<v8:DateQualifiers>
+							<v8:DateFractions>DateTime</v8:DateFractions>
+						</v8:DateQualifiers>
+					</Type>
+				</Properties>
+			</Resource>
+		</ChildObjects>
+	</InformationRegister>
+</MetaDataObject>

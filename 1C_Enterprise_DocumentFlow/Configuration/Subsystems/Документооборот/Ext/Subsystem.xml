@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<Subsystem>
+		<Properties>
+			<Name>Документооборот</Name>
+			<Synonym>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Документооборот</v8:content>
+				</v8:item>
+			</Synonym>
+			<Comment>Основная подсистема документооборота</Comment>
+			<IncludeHelpInContents>DontInclude</IncludeHelpInContents>
+			<IncludeInCommandInterface>true</IncludeInCommandInterface>
+			<Picture/>
+		</Properties>
+		<ChildObjects>
+			<Catalog>ВидыДокументов</Catalog>
+			<Catalog>Контрагенты</Catalog>
+			<Catalog>Сотрудники</Catalog>
+			<Catalog>ШаблоныМаршрутов</Catalog>
+			<Document>ВходящийДокумент</Document>
+			<Document>ИсходящийДокумент</Document>
+			<Document>ВнутреннийДокумент</Document>
+			<Enum>СтатусыДокументов</Enum>
+			<Enum>РезультатыСогласования</Enum>
+			<Enum>РолиПользователей</Enum>
+			<DataProcessor>ПанельЗадач</DataProcessor>
+			<InformationRegister>ЖурналСогласования</InformationRegister>
+			<InformationRegister>ВерсииФайлов</InformationRegister>
+			<InformationRegister>ЖурналАудита</InformationRegister>
+		</ChildObjects>
+	</Subsystem>
+</MetaDataObject>
