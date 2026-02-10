@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
-from lexima_dms.api.routes import auth, documents, tasks
+from lexima_dms.api.routes import auth, documents, license, tasks
 
 
 app = FastAPI(title="DIGITAL DOCUMENTS MVP", version="0.1.0")
 
 app.include_router(auth.router)
+app.include_router(license.router)
 app.include_router(documents.router)
 app.include_router(tasks.router)
 

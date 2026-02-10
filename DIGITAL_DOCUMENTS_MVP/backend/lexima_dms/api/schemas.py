@@ -76,3 +76,13 @@ class TaskItem(BaseModel):
     state: str
     meta: dict[str, Any] | None = None
 
+
+class LicenseActivateIn(BaseModel):
+    license_key: str
+
+
+class LicenseStatusOut(BaseModel):
+    active: bool
+    expires_at: datetime | None
+    message: str
+

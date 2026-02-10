@@ -19,6 +19,7 @@
 ## Что реализовано в этом MVP
 
 - **Backend API**: FastAPI + SQLite.
+- **Активация продукта**: лицензионные ключи, генерация через CLI, активация через API или CLI.
 - **Пользователи**: создание через CLI, логин по JWT.
 - **Документы**: создание/список/детали.
 - **Файлы**: загрузка файла при создании документа, добавление новых версий, скачивание.
@@ -47,14 +48,27 @@ pip install -r requirements.txt
 # 1) инициализировать БД
 python manage.py init-db
 
-# 2) создать пользователя
+# 2) сгенерировать и активировать лицензию
+python manage.py generate-license --days 365
+# Вывести ключ и активировать (CLI или API):
+python manage.py activate-license --key XXXX-XXXX-XXXX-XXXX-XXXX
+# Либо через API: POST /license/activate с {"license_key": "XXXX-..."}
+
+# 3) создать пользователя
 python manage.py create-user --username admin --password admin --role admin
 
-# 3) запустить API
+# 4) запустить API
 uvicorn lexima_dms.api.main:app --reload --port 8080
 ```
 
 Swagger откроется на `http://localhost:8080/docs`.
+
+### Активация продукта
+
+Без активной лицензии API блокирует авторизацию и защищённые эндпоинты (403). Доступны без лицензии:
+- `GET /health`
+- `GET /license/status` — статус лицензии
+- `POST /license/activate` — активация по ключу
 
 ## Дальше по развитию (если нужно «ближе к СЭД»)
 

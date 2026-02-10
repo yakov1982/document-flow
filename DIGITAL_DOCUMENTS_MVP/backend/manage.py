@@ -10,6 +10,7 @@ from lexima_dms.app_core.security import hash_password
 from lexima_dms.db.init_db import init_db
 from lexima_dms.db.models import User, UserRole
 from lexima_dms.db.session import db_session
+from lexima_dms.services.license import activate_license, create_license
 
 
 def cmd_init_db(_: argparse.Namespace) -> int:
@@ -17,6 +18,32 @@ def cmd_init_db(_: argparse.Namespace) -> int:
     init_db()
     print("OK: database initialized")
     return 0
+
+
+def cmd_generate_license(args: argparse.Namespace) -> int:
+    db = db_session()
+    try:
+        lic = create_license(db, expires_days=args.days)
+        print(f"OK: License generated")
+        print(f"  Key: {lic.license_key}")
+        print(f"  Expires: {lic.expires_at.strftime('%Y-%m-%d')}")
+        print(f"  Activate via: POST /license/activate with {{'license_key': '{lic.license_key}'}}")
+        return 0
+    finally:
+        db.close()
+
+
+def cmd_activate_license(args: argparse.Namespace) -> int:
+    db = db_session()
+    try:
+        status = activate_license(db, args.key)
+        if status.active:
+            print(f"OK: {status.message}")
+            return 0
+        print(f"ERR: {status.message}", file=sys.stderr)
+        return 2
+    finally:
+        db.close()
 
 
 def cmd_create_user(args: argparse.Namespace) -> int:
@@ -47,6 +74,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_init = sub.add_parser("init-db", help="Create data dir and initialize sqlite schema")
     p_init.set_defaults(func=cmd_init_db)
+
+    p_lic = sub.add_parser("generate-license", help="Generate a new license key")
+    p_lic.add_argument("--days", type=int, default=365, help="License validity in days")
+    p_lic.set_defaults(func=cmd_generate_license)
+
+    p_act = sub.add_parser("activate-license", help="Activate license by key (CLI)")
+    p_act.add_argument("--key", required=True, help="License key to activate")
+    p_act.set_defaults(func=cmd_activate_license)
 
     p_user = sub.add_parser("create-user", help="Create a user")
     p_user.add_argument("--username", required=True)

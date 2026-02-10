@@ -126,3 +126,15 @@ class AuditLog(Base):
     action: Mapped[str] = mapped_column(String(64), index=True)
     meta: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
 
+
+class License(Base):
+    """Лицензия продукта. Активированная и не истёкшая лицензия разблокирует API."""
+
+    __tablename__ = "licenses"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    license_key: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    activated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
