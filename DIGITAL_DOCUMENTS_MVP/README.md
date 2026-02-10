@@ -19,6 +19,7 @@
 ## Что реализовано в этом MVP
 
 - **Backend API**: FastAPI + SQLite.
+- **Frontend**: React + TypeScript + Vite (SPA).
 - **Пользователи**: создание через CLI, логин по JWT.
 - **Документы**: создание/список/детали.
 - **Файлы**: загрузка файла при создании документа, добавление новых версий, скачивание.
@@ -33,9 +34,13 @@ DIGITAL_DOCUMENTS_MVP/
     lexima_dms/        # приложение
     manage.py          # CLI: init-db, create-user
     requirements.txt
+  frontend/
+    src/               # React SPA
 ```
 
 ## Быстрый старт (локально)
+
+**1. Backend**
 
 ```bash
 cd DIGITAL_DOCUMENTS_MVP/backend
@@ -44,17 +49,32 @@ source .venv/bin/activate
 python -m pip install -U pip
 pip install -r requirements.txt
 
-# 1) инициализировать БД
 python manage.py init-db
-
-# 2) создать пользователя
 python manage.py create-user --username admin --password admin --role admin
 
-# 3) запустить API
+# Запуск API на порту 8080
 uvicorn lexima_dms.api.main:app --reload --port 8080
 ```
 
-Swagger откроется на `http://localhost:8080/docs`.
+**2. Frontend**
+
+```bash
+cd DIGITAL_DOCUMENTS_MVP/frontend
+npm install
+npm run dev
+```
+
+Фронтенд откроется на `http://localhost:5173`. Войдите под `admin` / `admin`.
+
+Для проверки маршрута согласования создайте второго пользователя:
+
+```bash
+python manage.py create-user --username approver --password approver --role approver
+```
+
+Затем создайте документ и укажите `approver` в поле «Согласующие». Задача появится в «Мои задачи» у пользователя approver.
+
+Swagger API: `http://localhost:8080/docs`
 
 ## Дальше по развитию (если нужно «ближе к СЭД»)
 
