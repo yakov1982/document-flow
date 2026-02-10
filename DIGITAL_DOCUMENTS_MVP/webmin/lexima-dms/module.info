@@ -1,0 +1,6 @@
+desc=Управление настройками системы документооборота DIGITAL DOCUMENTS MVP
+module=lexima-dms
+version=1.0
+author=Digital Documents MVP
+ depends=webmin
+ category=webmin

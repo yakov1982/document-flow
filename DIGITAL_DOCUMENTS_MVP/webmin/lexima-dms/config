@@ -1,0 +1,4 @@
+# Path to DIGITAL DOCUMENTS MVP backend (where .env and manage.py are)
+backend_path=
+# Path to .env file (default: backend_path/.env)
+env_path=
