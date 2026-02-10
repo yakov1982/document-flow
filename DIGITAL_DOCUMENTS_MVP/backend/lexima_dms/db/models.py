@@ -56,6 +56,10 @@ class Document(Base):
     reg_number: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
     status: Mapped[DocumentStatus] = mapped_column(Enum(DocumentStatus), default=DocumentStatus.draft, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    document_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    counterparty_from: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    counterparty_to: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    custom_attributes: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
 
     created_by_user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     created_by: Mapped[User] = relationship("User")
@@ -77,6 +81,11 @@ class Document(Base):
         back_populates="document",
         cascade="all, delete-orphan",
         order_by="DocumentSignature.signed_at.desc()",
+    )
+    assignments: Mapped[list["Assignment"]] = relationship(
+        "Assignment",
+        back_populates="document",
+        cascade="all, delete-orphan",
     )
 
     __table_args__ = (UniqueConstraint("doc_type", "reg_number", name="uq_doc_type_reg_number"),)
@@ -109,14 +118,17 @@ class ApprovalStep(Base):
     document_id: Mapped[int] = mapped_column(ForeignKey("documents.id"), index=True)
     step_order: Mapped[int] = mapped_column(Integer, index=True)
     approver_user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    delegated_to_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     state: Mapped[StepState] = mapped_column(Enum(StepState), default=StepState.pending, index=True)
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     acted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     document: Mapped[Document] = relationship("Document", back_populates="steps")
-    approver: Mapped[User] = relationship("User")
+    approver: Mapped[User] = relationship("User", foreign_keys=[approver_user_id])
+    delegated_to: Mapped[User | None] = relationship("User", foreign_keys=[delegated_to_user_id])
 
-    __table_args__ = (UniqueConstraint("document_id", "step_order", name="uq_doc_step_order"),)
+    __table_args__ = (UniqueConstraint("document_id", "step_order", "approver_user_id", name="uq_doc_step_approver"),)
 
 
 class DocumentSignature(Base):
@@ -134,6 +146,65 @@ class DocumentSignature(Base):
     signature_data: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
 
     document: Mapped["Document"] = relationship("Document", back_populates="signatures")
+    user: Mapped[User] = relationship("User")
+
+
+class Assignment(Base):
+    """Поручение по документу."""
+
+    __tablename__ = "assignments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    document_id: Mapped[int] = mapped_column(ForeignKey("documents.id"), index=True)
+    assignee_user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    created_by_user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    title: Mapped[str] = mapped_column(String(255))
+    deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(32), default="pending", index=True)  # pending, in_progress, done
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    document: Mapped["Document"] = relationship("Document", back_populates="assignments")
+    assignee: Mapped[User] = relationship("User", foreign_keys=[assignee_user_id])
+    created_by: Mapped[User] = relationship("User", foreign_keys=[created_by_user_id])
+
+
+class Notification(Base):
+    """Внутреннее уведомление."""
+
+    __tablename__ = "notifications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    message: Mapped[str] = mapped_column(String(512))
+    document_id: Mapped[int | None] = mapped_column(ForeignKey("documents.id"), nullable=True, index=True)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    user: Mapped[User] = relationship("User")
+
+
+class NumberingRule(Base):
+    """Правило автонумерации по типу документа."""
+
+    __tablename__ = "numbering_rules"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    doc_type: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    prefix: Mapped[str] = mapped_column(String(32), default="")
+    next_number: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class SavedFilter(Base):
+    """Сохранённый фильтр пользователя."""
+
+    __tablename__ = "saved_filters"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    name: Mapped[str] = mapped_column(String(128))
+    filter_data: Mapped[dict[str, Any]] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
     user: Mapped[User] = relationship("User")
 
 

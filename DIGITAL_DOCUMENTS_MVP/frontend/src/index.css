@@ -129,6 +129,53 @@ body {
   font-weight: 600;
 }
 
+.page-header .header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.delegate-form, .assign-form, .confirm-reject {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.assign-form input, .assign-form select {
+  padding: 0.25rem 0.5rem;
+}
+
+.step-approver, .step-deadline {
+  margin-left: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.audit-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  font-size: 0.875rem;
+}
+
+.audit-list li {
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.assignments-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
 /* Login */
 .login-page {
   min-height: 100vh;

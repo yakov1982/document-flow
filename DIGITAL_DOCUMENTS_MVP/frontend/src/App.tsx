@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
 import Layout from './Layout';
 import Login from './pages/Login';
+import Assignments from './pages/Assignments';
 import DocumentDetail from './pages/DocumentDetail';
 import Documents from './pages/Documents';
 import Tasks from './pages/Tasks';
@@ -28,6 +29,7 @@ function AppRoutes() {
         <Route index element={<Documents />} />
         <Route path="documents/:id" element={<DocumentDetail />} />
         <Route path="tasks" element={<Tasks />} />
+        <Route path="assignments" element={<Assignments />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -11,6 +11,7 @@ export default function Layout() {
         <ul className="nav-links">
           <li><NavLink to="/" end>Документы</NavLink></li>
           <li><NavLink to="/tasks">Мои задачи</NavLink></li>
+          <li><NavLink to="/assignments">Мои поручения</NavLink></li>
         </ul>
         <div className="sidebar-footer">
           <span className="user-name">{user?.username}</span>

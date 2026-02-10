@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from lexima_dms.api.routes import auth, documents, tasks
+from lexima_dms.api.routes import audit, assignments, notifications
 
 
 app = FastAPI(title="DIGITAL DOCUMENTS MVP", version="0.1.0")
@@ -19,6 +20,9 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(documents.router)
 app.include_router(tasks.router)
+app.include_router(audit.router)
+app.include_router(assignments.router)
+app.include_router(notifications.router)
 
 
 @app.get("/health")

@@ -50,6 +50,19 @@ export async function getAuthInfo(): Promise<{ ldap_enabled: boolean }> {
   return res.json();
 }
 
+export interface DocumentListParams {
+  q?: string;
+  status_filter?: string;
+  doc_type_filter?: string;
+  author_id?: number;
+  counterparty?: string;
+  date_from?: string;
+  date_to?: string;
+  sort?: string;
+  skip?: number;
+  limit?: number;
+}
+
 export interface DocumentListItem {
   id: number;
   title: string;
@@ -57,15 +70,39 @@ export interface DocumentListItem {
   reg_number: string | null;
   status: string;
   created_at: string;
+  created_by_username?: string;
 }
 
-export async function listDocuments(q?: string, status_filter?: string): Promise<DocumentListItem[]> {
-  const params = new URLSearchParams();
-  if (q) params.append('q', q);
-  if (status_filter) params.append('status_filter', status_filter);
-  const res = await fetch(`${API_BASE}/documents?${params}`, { headers: getHeaders() });
+export async function listDocuments(params?: DocumentListParams): Promise<DocumentListItem[]> {
+  const p = new URLSearchParams();
+  if (params?.q) p.append('q', params.q);
+  if (params?.status_filter) p.append('status_filter', params.status_filter);
+  if (params?.doc_type_filter) p.append('doc_type_filter', params.doc_type_filter);
+  if (params?.author_id) p.append('author_id', String(params.author_id));
+  if (params?.counterparty) p.append('counterparty', params.counterparty);
+  if (params?.date_from) p.append('date_from', params.date_from);
+  if (params?.date_to) p.append('date_to', params.date_to);
+  if (params?.sort) p.append('sort', params.sort);
+  if (params?.skip != null) p.append('skip', String(params.skip));
+  if (params?.limit != null) p.append('limit', String(params.limit));
+  const res = await fetch(`${API_BASE}/documents?${p}`, { headers: getHeaders() });
   if (!res.ok) throw new Error('Ошибка загрузки документов');
   return res.json();
+}
+
+export async function exportDocumentsCsv(params?: { q?: string; status_filter?: string }): Promise<void> {
+  const p = new URLSearchParams();
+  if (params?.q) p.append('q', params.q);
+  if (params?.status_filter) p.append('status_filter', params.status_filter);
+  const res = await fetch(`${API_BASE}/documents/export/csv?${p}`, { headers: getHeaders() });
+  if (!res.ok) throw new Error('Ошибка экспорта');
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'documents.csv';
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export interface DocumentVersionOut {
@@ -82,9 +119,13 @@ export interface ApprovalStepOut {
   id: number;
   step_order: number;
   approver_user_id: number;
+  approver_username?: string;
+  delegated_to_user_id?: number | null;
+  delegated_to_username?: string | null;
   state: string;
   comment: string | null;
   acted_at: string | null;
+  deadline?: string | null;
 }
 
 export interface DocumentSignatureOut {
@@ -103,10 +144,15 @@ export interface DocumentOut {
   reg_number: string | null;
   status: string;
   created_at: string;
+  document_date?: string | null;
+  counterparty_from?: string | null;
+  counterparty_to?: string | null;
+  custom_attributes?: Record<string, unknown> | null;
   created_by_user_id: number;
   versions: DocumentVersionOut[];
   steps: ApprovalStepOut[];
   signatures: DocumentSignatureOut[];
+  assignments?: Record<string, unknown>[];
 }
 
 export async function getDocument(id: number): Promise<DocumentOut> {
@@ -119,6 +165,9 @@ export async function createDocument(data: {
   title: string;
   doc_type?: string;
   reg_number?: string;
+  document_date?: string;
+  counterparty_from?: string;
+  counterparty_to?: string;
   approvers?: string;
   file?: File;
 }): Promise<DocumentOut> {
@@ -126,6 +175,9 @@ export async function createDocument(data: {
   form.append('title', data.title);
   form.append('doc_type', data.doc_type || 'generic');
   if (data.reg_number) form.append('reg_number', data.reg_number);
+  if (data.document_date) form.append('document_date', data.document_date);
+  if (data.counterparty_from) form.append('counterparty_from', data.counterparty_from);
+  if (data.counterparty_to) form.append('counterparty_to', data.counterparty_to);
   if (data.approvers) form.append('approvers', data.approvers);
   if (data.file) form.append('file', data.file);
 
@@ -223,7 +275,64 @@ export interface TaskItem {
   step_id: number;
   step_order: number;
   state: string;
+  deadline?: string | null;
   meta?: Record<string, unknown>;
+}
+
+export interface AuditLogItem {
+  id: number;
+  created_at: string;
+  actor_username?: string | null;
+  action: string;
+  document_id: number | null;
+  meta?: Record<string, unknown> | null;
+}
+
+export async function getAuditLog(documentId?: number): Promise<AuditLogItem[]> {
+  const params = documentId ? `?document_id=${documentId}` : '';
+  const res = await fetch(`${API_BASE}/audit${params}`, { headers: getHeaders() });
+  if (!res.ok) throw new Error('Ошибка загрузки аудита');
+  return res.json();
+}
+
+export async function delegateStep(docId: number, stepId: number, toUsername: string): Promise<DocumentOut> {
+  const res = await fetch(`${API_BASE}/documents/${docId}/delegate`, {
+    method: 'POST',
+    headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ step_id: stepId, to_username: toUsername }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Ошибка делегирования');
+  }
+  return res.json();
+}
+
+export async function createAssignment(data: {
+  document_id: number;
+  assignee_username: string;
+  title: string;
+  deadline?: string;
+}): Promise<unknown> {
+  const res = await fetch(`${API_BASE}/assignments`, {
+    method: 'POST',
+    headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Ошибка создания поручения');
+  return res.json();
+}
+
+export async function getMyAssignments(): Promise<unknown[]> {
+  const res = await fetch(`${API_BASE}/assignments/my`, { headers: getHeaders() });
+  if (!res.ok) throw new Error('Ошибка загрузки поручений');
+  return res.json();
+}
+
+export async function getUsers(): Promise<User[]> {
+  const res = await fetch(`${API_BASE}/auth/users`, { headers: getHeaders() });
+  if (!res.ok) return [];
+  return res.json();
 }
 
 export async function getMyTasks(): Promise<TaskItem[]> {

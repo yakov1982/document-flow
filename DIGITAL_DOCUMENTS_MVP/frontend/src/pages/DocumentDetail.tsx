@@ -2,13 +2,19 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   approveDocument,
+  createAssignment,
+  delegateStep,
   downloadSignature,
   downloadVersion,
+  getAuditLog,
   getDocument,
+  getUsers,
   rejectDocument,
   signDocument,
   uploadVersion,
+  type AuditLogItem,
   type DocumentOut,
+  type User,
 } from '../api';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -36,6 +42,15 @@ export default function DocumentDetail() {
   const [signCertSubject, setSignCertSubject] = useState('');
   const [signCertThumbprint, setSignCertThumbprint] = useState('');
   const [signatureFile, setSignatureFile] = useState<File | null>(null);
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
+  const [auditLog, setAuditLog] = useState<AuditLogItem[]>([]);
+  const [showAudit, setShowAudit] = useState(false);
+  const [delegateTo, setDelegateTo] = useState('');
+  const [delegateStepId, setDelegateStepId] = useState<number | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [assignTitle, setAssignTitle] = useState('');
+  const [assignAssignee, setAssignAssignee] = useState('');
+  const [assignDeadline, setAssignDeadline] = useState('');
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -76,12 +91,62 @@ export default function DocumentDetail() {
       const updated = await rejectDocument(doc.id, comment || undefined);
       setDoc(updated);
       setComment('');
+      setShowRejectConfirm(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка');
     } finally {
       setActionLoading(false);
     }
   };
+
+  const handleDelegate = async () => {
+    if (!doc || !delegateStepId || !delegateTo) return;
+    setActionLoading(true);
+    try {
+      const updated = await delegateStep(doc.id, delegateStepId, delegateTo);
+      setDoc(updated);
+      setDelegateTo('');
+      setDelegateStepId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка делегирования');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const loadAudit = async () => {
+    if (!id) return;
+    const log = await getAuditLog(Number(id));
+    setAuditLog(log);
+    setShowAudit(true);
+  };
+
+  const handleCreateAssignment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!doc || !assignTitle || !assignAssignee) return;
+    setActionLoading(true);
+    try {
+      await createAssignment({
+        document_id: doc.id,
+        assignee_username: assignAssignee,
+        title: assignTitle,
+        deadline: assignDeadline || undefined,
+      });
+      setAssignTitle('');
+      setAssignAssignee('');
+      setAssignDeadline('');
+      const updated = await getDocument(doc.id);
+      setDoc(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getUsers().then(setUsers);
+  }, []);
 
   const handleUploadVersion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,9 +215,40 @@ export default function DocumentDetail() {
             <dd>{doc.doc_type}</dd>
             <dt>Рег. номер</dt>
             <dd>{doc.reg_number || '—'}</dd>
+            <dt>Дата документа</dt>
+            <dd>{doc.document_date ? formatDate(doc.document_date) : '—'}</dd>
+            <dt>От кого</dt>
+            <dd>{doc.counterparty_from || '—'}</dd>
+            <dt>Кому</dt>
+            <dd>{doc.counterparty_to || '—'}</dd>
             <dt>Создан</dt>
             <dd>{formatDate(doc.created_at)}</dd>
           </dl>
+          <button type="button" className="btn btn-sm" onClick={loadAudit}>Журнал аудита</button>
+        </section>
+
+        <section className="detail-card">
+          <h2>Поручения</h2>
+          {(doc.assignments ?? []).length > 0 ? (
+            <ul className="assignments-list">
+              {(doc.assignments as Array<{ id: number; title: string; deadline?: string; status: string }>).map((a) => (
+                <li key={a.id}>{a.title} — {a.deadline ? formatDate(a.deadline) : '—'} ({a.status})</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted">Нет поручений</p>
+          )}
+          <form onSubmit={handleCreateAssignment} className="assign-form">
+            <input value={assignTitle} onChange={(e) => setAssignTitle(e.target.value)} placeholder="Текст поручения" required />
+            <select value={assignAssignee} onChange={(e) => setAssignAssignee(e.target.value)} required>
+              <option value="">Исполнитель</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.username}>{u.username}</option>
+              ))}
+            </select>
+            <input type="date" value={assignDeadline} onChange={(e) => setAssignDeadline(e.target.value)} />
+            <button type="submit" className="btn btn-sm btn-primary" disabled={actionLoading}>Создать</button>
+          </form>
         </section>
 
         <section className="detail-card">
@@ -193,15 +289,44 @@ export default function DocumentDetail() {
           {sortedSteps.length === 0 ? (
             <p className="muted">Нет шагов</p>
           ) : (
-            <ol className="steps-list">
-              {sortedSteps.map((s) => (
-                <li key={s.id} className={s.state}>
-                  <span className="step-order">Шаг {s.step_order}</span>
-                  <span className="step-state">{STEP_STATE_LABELS[s.state] || s.state}</span>
-                  {s.comment && <span className="step-comment">{s.comment}</span>}
-                </li>
-              ))}
-            </ol>
+            <>
+              <ol className="steps-list">
+                {sortedSteps.map((s) => (
+                  <li key={s.id} className={s.state}>
+                    <span className="step-order">Шаг {s.step_order}</span>
+                    <span className="step-approver">
+                      {s.delegated_to_username || s.approver_username || `#${s.approver_user_id}`}
+                    </span>
+                    <span className="step-state">{STEP_STATE_LABELS[s.state] || s.state}</span>
+                    {s.deadline && <span className="step-deadline">до {formatDate(s.deadline)}</span>}
+                    {s.comment && <span className="step-comment">{s.comment}</span>}
+                    {doc.status === 'in_review' && s.state === 'pending' && (
+                      <button
+                        type="button"
+                        className="btn btn-sm"
+                        onClick={() => setDelegateStepId(s.id)}
+                      >
+                        Делегировать
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ol>
+              {delegateStepId && (
+                <div className="delegate-form">
+                  <select value={delegateTo} onChange={(e) => setDelegateTo(e.target.value)}>
+                    <option value="">Выберите пользователя</option>
+                    {users.map((u) => (
+                      <option key={u.id} value={u.username}>{u.username}</option>
+                    ))}
+                  </select>
+                  <button type="button" className="btn btn-sm btn-primary" onClick={handleDelegate} disabled={!delegateTo || actionLoading}>
+                    Делегировать
+                  </button>
+                  <button type="button" className="btn btn-sm" onClick={() => setDelegateStepId(null)}>Отмена</button>
+                </div>
+              )}
+            </>
           )}
         </section>
 
@@ -281,12 +406,37 @@ export default function DocumentDetail() {
               <button
                 type="button"
                 className="btn btn-danger"
-                onClick={handleReject}
+                onClick={() => setShowRejectConfirm(true)}
                 disabled={actionLoading}
               >
-                {actionLoading ? '…' : 'Отклонить'}
+                Отклонить
               </button>
             </div>
+            {showRejectConfirm && (
+              <div className="confirm-reject">
+                <p>Вы уверены, что хотите отклонить документ?</p>
+                <button type="button" className="btn btn-danger" onClick={handleReject} disabled={actionLoading}>
+                  Да, отклонить
+                </button>
+                <button type="button" className="btn" onClick={() => setShowRejectConfirm(false)}>
+                  Отмена
+                </button>
+              </div>
+            )}
+          </section>
+        )}
+
+        {showAudit && (
+          <section className="detail-card audit-modal">
+            <h2>Журнал аудита</h2>
+            <ul className="audit-list">
+              {auditLog.map((l) => (
+                <li key={l.id}>
+                  {formatDate(l.created_at)} — {l.actor_username || '?'}: {l.action}
+                </li>
+              ))}
+            </ul>
+            <button type="button" className="btn btn-sm" onClick={() => setShowAudit(false)}>Закрыть</button>
           </section>
         )}
       </div>

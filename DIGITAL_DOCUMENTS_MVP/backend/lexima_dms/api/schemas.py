@@ -38,9 +38,32 @@ class ApprovalStepOut(BaseModel):
     id: int
     step_order: int
     approver_user_id: int
+    approver_username: str | None = None
+    delegated_to_user_id: int | None = None
+    delegated_to_username: str | None = None
     state: str
     comment: str | None
     acted_at: datetime | None
+    deadline: datetime | None
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def add_usernames(cls, data: object, handler: object) -> "ApprovalStepOut":
+        if hasattr(data, "approver"):
+            d = {
+                "id": data.id,
+                "step_order": data.step_order,
+                "approver_user_id": data.approver_user_id,
+                "approver_username": data.approver.username if data.approver else None,
+                "delegated_to_user_id": getattr(data, "delegated_to_user_id", None),
+                "delegated_to_username": data.delegated_to.username if getattr(data, "delegated_to", None) else None,
+                "state": data.state.value if hasattr(data.state, "value") else data.state,
+                "comment": data.comment,
+                "acted_at": data.acted_at,
+                "deadline": getattr(data, "deadline", None),
+            }
+            return handler(d)
+        return handler(data)
 
 
 class DocumentSignatureOut(BaseModel):
@@ -79,10 +102,15 @@ class DocumentOut(BaseModel):
     reg_number: str | None
     status: str
     created_at: datetime
+    document_date: datetime | None = None
+    counterparty_from: str | None = None
+    counterparty_to: str | None = None
+    custom_attributes: dict[str, Any] | None = None
     created_by_user_id: int
     versions: list[DocumentVersionOut] = []
     steps: list[ApprovalStepOut] = []
     signatures: list[DocumentSignatureOut] = []
+    assignments: list[dict[str, Any]] = []
 
 
 class DocumentListItem(BaseModel):
@@ -94,6 +122,15 @@ class DocumentListItem(BaseModel):
     reg_number: str | None
     status: str
     created_at: datetime
+    created_by_username: str | None = None
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def add_author(cls, data: object, handler: object) -> "DocumentListItem":
+        if hasattr(data, "created_by") and data.created_by:
+            d = {**{k: getattr(data, k) for k in ["id", "title", "doc_type", "reg_number", "status", "created_at"]}, "created_by_username": data.created_by.username}
+            return handler(d)
+        return handler(data)
 
 
 class TaskItem(BaseModel):
@@ -102,5 +139,33 @@ class TaskItem(BaseModel):
     step_id: int
     step_order: int
     state: str
+    deadline: datetime | None = None
     meta: dict[str, Any] | None = None
+
+
+class AuditLogItem(BaseModel):
+    id: int
+    created_at: datetime
+    actor_username: str | None = None
+    action: str
+    document_id: int | None
+    meta: dict[str, Any] | None = None
+
+
+class AssignmentOut(BaseModel):
+    id: int
+    document_id: int
+    assignee_user_id: int
+    title: str
+    deadline: datetime | None
+    status: str
+    created_at: datetime
+
+
+class NotificationOut(BaseModel):
+    id: int
+    message: str
+    document_id: int | None
+    read_at: datetime | None
+    created_at: datetime
 

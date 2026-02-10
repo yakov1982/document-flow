@@ -62,3 +62,10 @@ def auth_info() -> dict:
     settings = get_settings()
     return {"ldap_enabled": settings.ldap_enabled}
 
+
+@router.get("/users", response_model=list[UserOut])
+def list_users(db: Session = Depends(get_db), _current_user: User = Depends(get_current_user)) -> list[UserOut]:
+    """Список пользователей (для выбора согласующих, делегирования и т.д.)."""
+    users = db.query(User).order_by(User.username).all()
+    return [UserOut.model_validate(u) for u in users]
+

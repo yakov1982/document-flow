@@ -7,4 +7,10 @@ from lexima_dms.db.session import get_engine
 def init_db() -> None:
     engine = get_engine()
     Base.metadata.create_all(bind=engine)
+    try:
+        from lexima_dms.db.migrate import migrate
+
+        migrate()
+    except Exception:
+        pass
 
