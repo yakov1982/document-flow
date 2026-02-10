@@ -4,7 +4,7 @@ import enum
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, DateTime, Enum, ForeignKey, Integer, LargeBinary, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -72,6 +72,12 @@ class Document(Base):
         cascade="all, delete-orphan",
         order_by="ApprovalStep.step_order.asc()",
     )
+    signatures: Mapped[list["DocumentSignature"]] = relationship(
+        "DocumentSignature",
+        back_populates="document",
+        cascade="all, delete-orphan",
+        order_by="DocumentSignature.signed_at.desc()",
+    )
 
     __table_args__ = (UniqueConstraint("doc_type", "reg_number", name="uq_doc_type_reg_number"),)
 
@@ -111,6 +117,24 @@ class ApprovalStep(Base):
     approver: Mapped[User] = relationship("User")
 
     __table_args__ = (UniqueConstraint("document_id", "step_order", name="uq_doc_step_order"),)
+
+
+class DocumentSignature(Base):
+    """ЭЦП: подпись документа."""
+
+    __tablename__ = "document_signatures"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    document_id: Mapped[int] = mapped_column(ForeignKey("documents.id"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    signed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    cert_subject: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    cert_thumbprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    signature_data: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+
+    document: Mapped["Document"] = relationship("Document", back_populates="signatures")
+    user: Mapped[User] = relationship("User")
 
 
 class AuditLog(Base):

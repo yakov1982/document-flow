@@ -2,9 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   approveDocument,
+  downloadSignature,
   downloadVersion,
   getDocument,
   rejectDocument,
+  signDocument,
   uploadVersion,
   type DocumentOut,
 } from '../api';
@@ -31,6 +33,9 @@ export default function DocumentDetail() {
   const [actionLoading, setActionLoading] = useState(false);
   const [comment, setComment] = useState('');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [signCertSubject, setSignCertSubject] = useState('');
+  const [signCertThumbprint, setSignCertThumbprint] = useState('');
+  const [signatureFile, setSignatureFile] = useState<File | null>(null);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -88,6 +93,27 @@ export default function DocumentDetail() {
       setUploadFile(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка загрузки');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleSign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!doc) return;
+    setActionLoading(true);
+    try {
+      const updated = await signDocument(doc.id, {
+        certSubject: signCertSubject || undefined,
+        certThumbprint: signCertThumbprint || undefined,
+        signatureFile: signatureFile || undefined,
+      });
+      setDoc(updated);
+      setSignCertSubject('');
+      setSignCertThumbprint('');
+      setSignatureFile(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка подписания');
     } finally {
       setActionLoading(false);
     }
@@ -177,6 +203,61 @@ export default function DocumentDetail() {
               ))}
             </ol>
           )}
+        </section>
+
+        <section className="detail-card">
+          <h2>ЭЦП (подписи)</h2>
+          {(doc.signatures ?? []).length > 0 ? (
+            <ul className="signatures-list">
+              {doc.signatures.map((s) => (
+                <li key={s.id}>
+                  <span className="sig-info">
+                    {s.cert_subject || `Пользователь #${s.user_id}`} — {formatDate(s.signed_at)}
+                  </span>
+                  {s.has_detached_signature && (
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      onClick={() => downloadSignature(doc.id, s.id)}
+                    >
+                      Скачать .p7s
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted">Нет подписей</p>
+          )}
+          <form onSubmit={handleSign} className="sign-form">
+            <div className="form-group">
+              <label>Сертификат (CN)</label>
+              <input
+                value={signCertSubject}
+                onChange={(e) => setSignCertSubject(e.target.value)}
+                placeholder="ФИО из сертификата"
+              />
+            </div>
+            <div className="form-group">
+              <label>Отпечаток сертификата</label>
+              <input
+                value={signCertThumbprint}
+                onChange={(e) => setSignCertThumbprint(e.target.value)}
+                placeholder="SHA-1 thumbprint"
+              />
+            </div>
+            <div className="form-group">
+              <label>Файл подписи (PKCS#7, необязательно)</label>
+              <input
+                type="file"
+                accept=".p7s,.sig"
+                onChange={(e) => setSignatureFile(e.target.files?.[0] || null)}
+              />
+            </div>
+            <button type="submit" className="btn btn-primary btn-sm" disabled={actionLoading}>
+              {actionLoading ? 'Подписание…' : 'Подписать документ'}
+            </button>
+          </form>
         </section>
 
         {doc.status === 'in_review' && (

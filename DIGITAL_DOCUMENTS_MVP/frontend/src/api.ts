@@ -44,6 +44,12 @@ export async function getMe(): Promise<User> {
   return res.json();
 }
 
+export async function getAuthInfo(): Promise<{ ldap_enabled: boolean }> {
+  const res = await fetch(`${API_BASE}/auth/info`);
+  if (!res.ok) return { ldap_enabled: false };
+  return res.json();
+}
+
 export interface DocumentListItem {
   id: number;
   title: string;
@@ -81,6 +87,15 @@ export interface ApprovalStepOut {
   acted_at: string | null;
 }
 
+export interface DocumentSignatureOut {
+  id: number;
+  user_id: number;
+  signed_at: string;
+  cert_subject: string | null;
+  cert_thumbprint: string | null;
+  has_detached_signature?: boolean;
+}
+
 export interface DocumentOut {
   id: number;
   title: string;
@@ -91,6 +106,7 @@ export interface DocumentOut {
   created_by_user_id: number;
   versions: DocumentVersionOut[];
   steps: ApprovalStepOut[];
+  signatures: DocumentSignatureOut[];
 }
 
 export async function getDocument(id: number): Promise<DocumentOut> {
@@ -214,4 +230,43 @@ export async function getMyTasks(): Promise<TaskItem[]> {
   const res = await fetch(`${API_BASE}/tasks/my`, { headers: getHeaders() });
   if (!res.ok) throw new Error('Ошибка загрузки задач');
   return res.json();
+}
+
+export async function signDocument(
+  docId: number,
+  opts?: { certSubject?: string; certThumbprint?: string; signatureFile?: File }
+): Promise<DocumentOut> {
+  const form = new FormData();
+  if (opts?.certSubject) form.append('cert_subject', opts.certSubject);
+  if (opts?.certThumbprint) form.append('cert_thumbprint', opts.certThumbprint);
+  if (opts?.signatureFile) form.append('signature_file', opts.signatureFile);
+
+  const headers: Record<string, string> = {};
+  const token = getToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/documents/${docId}/sign`, {
+    method: 'POST',
+    headers,
+    body: form,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Ошибка подписания');
+  }
+  return res.json();
+}
+
+export async function downloadSignature(docId: number, sigId: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/documents/${docId}/signatures/${sigId}/download`, {
+    headers: getHeaders(),
+  });
+  if (!res.ok) throw new Error('Ошибка скачивания');
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `signature_${sigId}.p7s`;
+  a.click();
+  URL.revokeObjectURL(url);
 }

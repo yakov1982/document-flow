@@ -19,6 +19,16 @@ class Settings(BaseSettings):
     jwt_alg: str = "HS256"
     jwt_expires_minutes: int = 12 * 60
 
+    # LDAP/AD DS
+    ldap_enabled: bool = False
+    ldap_url: str = "ldap://dc.example.com"
+    ldap_base_dn: str = "DC=example,DC=com"
+    ldap_bind_dn: str = ""
+    ldap_bind_password: str = ""
+    ldap_user_search_filter: str = "(sAMAccountName={username})"
+    ldap_user_dn_template: str = ""  # для direct bind: "{username}@domain.local"
+    ldap_default_role: str = "author"
+
     def ensure_dirs(self) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)
         (self.data_dir / "files").mkdir(parents=True, exist_ok=True)

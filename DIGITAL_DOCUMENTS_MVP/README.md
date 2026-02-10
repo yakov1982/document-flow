@@ -21,8 +21,10 @@
 - **Backend API**: FastAPI + SQLite.
 - **Frontend**: React + TypeScript + Vite (SPA).
 - **Пользователи**: создание через CLI, логин по JWT.
+- **Привязка к AD DS**: вход через Active Directory (LDAP).
 - **Документы**: создание/список/детали.
 - **Файлы**: загрузка файла при создании документа, добавление новых версий, скачивание.
+- **ЭЦП**: подписание документов (метаданные сертификата, detached PKCS#7).
 - **Согласование**: последовательная цепочка согласующих, approve/reject, «мои задачи».
 - **Аудит**: запись ключевых действий в журнал.
 
@@ -75,6 +77,27 @@ python manage.py create-user --username approver --password approver --role appr
 Затем создайте документ и укажите `approver` в поле «Согласующие». Задача появится в «Мои задачи» у пользователя approver.
 
 Swagger API: `http://localhost:8080/docs`
+
+## Привязка к Active Directory (AD DS)
+
+Для входа через учётные записи AD настройте LDAP в `.env`:
+
+```env
+LEXIMA_DMS_LDAP_ENABLED=true
+LEXIMA_DMS_LDAP_URL=ldap://dc.company.local
+LEXIMA_DMS_LDAP_BASE_DN=DC=company,DC=local
+LEXIMA_DMS_LDAP_BIND_DN=CN=svc_ldap,OU=Service,DC=company,DC=local
+LEXIMA_DMS_LDAP_BIND_PASSWORD=secret
+LEXIMA_DMS_LDAP_USER_SEARCH_FILTER=(sAMAccountName={username})
+LEXIMA_DMS_LDAP_DEFAULT_ROLE=author
+```
+
+При первом входе пользователь AD создаётся в системе автоматически. Либо создайте заранее:  
+`python manage.py create-user --username domain_user --ad --role author`
+
+## ЭЦП (электронная подпись)
+
+Документ можно подписать на странице деталей: указать данные сертификата (CN, отпечаток) и загрузить файл подписи PKCS#7 (`.p7s`). Подписи сохраняются и отображаются в карточке документа. Скачивание detached-подписи доступно для проверки в КриптоПро CSP и др.
 
 ## Дальше по развитию (если нужно «ближе к СЭД»)
 

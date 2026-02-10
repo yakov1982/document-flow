@@ -28,14 +28,24 @@ def cmd_create_user(args: argparse.Namespace) -> int:
             print("ERR: user already exists", file=sys.stderr)
             return 2
 
+        if getattr(args, "ad", False):
+            # AD-only user: will authenticate via LDAP/AD DS
+            password_hash = ""
+        elif not args.password:
+            print("ERR: password required for local users", file=sys.stderr)
+            return 2
+        else:
+            password_hash = hash_password(args.password)
+
         u = User(
             username=args.username,
-            password_hash=hash_password(args.password),
+            password_hash=password_hash,
             role=role,
         )
         db.add(u)
         db.commit()
-        print(f"OK: user created id={u.id} username={u.username} role={u.role.value}")
+        auth_note = " (AD/LDAP)" if getattr(args, "ad", False) else ""
+        print(f"OK: user created id={u.id} username={u.username} role={u.role.value}{auth_note}")
         return 0
     finally:
         db.close()
@@ -50,12 +60,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_user = sub.add_parser("create-user", help="Create a user")
     p_user.add_argument("--username", required=True)
-    p_user.add_argument("--password", required=True)
+    p_user.add_argument("--password", default="", help="Password (empty for --ad)")
     p_user.add_argument(
         "--role",
         default=UserRole.author.value,
         choices=[r.value for r in UserRole],
         help="User role",
+    )
+    p_user.add_argument(
+        "--ad",
+        action="store_true",
+        help="AD/LDAP user: no local password, auth via Active Directory",
     )
     p_user.set_defaults(func=cmd_create_user)
 

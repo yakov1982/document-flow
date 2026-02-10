@@ -12,6 +12,7 @@ from lexima_dms.api.schemas import DocumentListItem, DocumentOut
 from lexima_dms.db.models import (
     ApprovalStep,
     Document,
+    DocumentSignature,
     DocumentStatus,
     DocumentVersion,
     StepState,
@@ -230,3 +231,61 @@ def reject(
     db.commit()
     db.refresh(doc)
     return DocumentOut.model_validate(doc)
+
+
+@router.post("/{doc_id}/sign", response_model=DocumentOut)
+def sign_document(
+    doc_id: int,
+    cert_subject: Annotated[str | None, Form()] = None,
+    cert_thumbprint: Annotated[str | None, Form()] = None,
+    signature_file: Annotated[UploadFile | None, File()] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> DocumentOut:
+    """ЭЦП: подписать документ. Опционально: сертификат (subject, thumbprint), файл подписи (PKCS#7)."""
+    doc = db.query(Document).filter(Document.id == doc_id).one_or_none()
+    if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+    sig_data: bytes | None = None
+    if signature_file:
+        sig_data = signature_file.file.read()
+
+    sig = DocumentSignature(
+        document_id=doc.id,
+        user_id=current_user.id,
+        cert_subject=cert_subject,
+        cert_thumbprint=cert_thumbprint,
+        signature_data=sig_data,
+    )
+    db.add(sig)
+    audit(db, actor=current_user, action="document.sign", document_id=doc.id)
+    db.commit()
+    db.refresh(doc)
+    return DocumentOut.model_validate(doc)
+
+
+@router.get("/{doc_id}/signatures/{sig_id}/download")
+def download_signature(
+    doc_id: int,
+    sig_id: int,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+):
+    """Скачать файл подписи (PKCS#7) для проверки."""
+    sig = (
+        db.query(DocumentSignature)
+        .filter(
+            DocumentSignature.id == sig_id,
+            DocumentSignature.document_id == doc_id,
+        )
+        .one_or_none()
+    )
+    if not sig or not sig.signature_data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signature not found")
+    from fastapi.responses import Response
+    return Response(
+        content=sig.signature_data,
+        media_type="application/pkcs7-signature",
+        headers={"Content-Disposition": f'attachment; filename="signature_{sig_id}.p7s"'},
+    )
